@@ -2,15 +2,13 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
-	"sort"
 )
 
 type User struct {
 	UserId  string
-	balance map[string]float64
+	Balance map[string]float64
 }
 
 type Order struct {
@@ -22,58 +20,42 @@ type Order struct {
 
 const TICKER = "BTC/USDT"
 
-var bid []Order
-var ask []Order
+var bids []Order
+var asks []Order
 
+// TODO: connect db for users
 var users = []User{
-	{UserId: "1", balance: map[string]float64{"BTC": 1.00, "USDT": 10000.00}},
-	{UserId: "2", balance: map[string]float64{"BTC": 1.00, "USDT": 10000.00}},
+	{UserId: "1", Balance: map[string]float64{"BTC": 1.00, "USDT": 100000.00}},
+	{UserId: "2", Balance: map[string]float64{"BTC": 1.00, "USDT": 100000.00}},
 }
 
-// TODO: Implement incoming request handling
 func (s *Server) order(w http.ResponseWriter, r *http.Request) {
 	body, _ := io.ReadAll(r.Body)
 	var order Order
 	json.Unmarshal(body, &order)
 
-	remainingQuantity := fulfillOrder()
+	remainingQuantity := fillOrder(order)
 
 	if remainingQuantity == 0.0 {
-		w.Write([]byte("Fulfilled"))
+		w.Write([]byte("Order Fulfilled"))
+		return
 	}
-
-	if order.Side == "BID" {
-		newOrder := Order{UserId: order.UserId, Price: order.Price, Quantity: remainingQuantity}
-		bid = append(bid, newOrder)
-
-		sort.Slice(bid, func(i, j int) bool {
-			return bid[i].Price > bid[j].Price
-		})
-	} else {
-		ask = append(ask, order)
-
-		sort.Slice(ask, func(i, j int) bool {
-			return ask[i].Price < ask[j].Price
-		})
-	}
-
-	fmt.Println(ask)
 }
 
-// TODO: make an orderBook from all the orders
 func (s *Server) depth(w http.ResponseWriter, r *http.Request) {
+	orderBook := make(map[float64][]Order)
 
-	for _, order := range ask {
-		fmt.Println(order)
+	for _, order := range asks {
+		orderBook[order.Price] = append(orderBook[order.Price], order)
 	}
-	for _, order := range bid {
-		fmt.Println(order)
+	for _, order := range bids {
+		orderBook[order.Price] = append(orderBook[order.Price], order)
 	}
+
+	// TODO: return order book JSON response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(orderBook)
 }
 
 func (s *Server) balance(w http.ResponseWriter, r *http.Request) {
-}
-
-func fulfillOrder() float64 {
-	return 0.0
 }
