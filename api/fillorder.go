@@ -40,6 +40,7 @@ func fillOrder(order Order) float64 {
 				asks[idx].Quantity -= remainingQuantity
 				flipBalance(ask.UserId, order.UserId, ask.Price, remainingQuantity)
 				return 0.0
+
 			} else {
 				remainingQuantity -= ask.Quantity
 				flipBalance(ask.UserId, order.UserId, ask.Price, ask.Quantity)
@@ -57,6 +58,7 @@ func fillOrder(order Order) float64 {
 				bid.Quantity -= remainingQuantity
 				flipBalance(order.UserId, bid.UserId, order.Price, remainingQuantity)
 				return 0.0
+
 			} else {
 				remainingQuantity -= bid.Quantity
 				flipBalance(order.UserId, bid.UserId, order.Price, bid.Quantity)

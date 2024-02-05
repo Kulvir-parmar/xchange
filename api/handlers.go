@@ -8,6 +8,9 @@ import (
 	"sort"
 )
 
+// Single dev working on this so only one TICKER available.
+const TICKER = "BTC/USDT"
+
 type User struct {
 	UserId  string
 	Balance map[string]float64
@@ -19,9 +22,6 @@ type Order struct {
 	Price    float64
 	Quantity float64
 }
-
-// Single dev working on this so only one TICKER available.
-const TICKER = "BTC/USDT"
 
 /*
 For lower latency we are keep order book in memory only rather than some db.
@@ -72,13 +72,8 @@ func (s *Server) order(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	fmt.Println(asks)
-	fmt.Println(bids)
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]float64{"Filled Quantity": order.Quantity - remainingQuantity})
-
-	fmt.Println("Order Placed in orderbook")
 }
 
 // FIX: fix this api
@@ -91,3 +86,45 @@ func (s *Server) order(w http.ResponseWriter, r *http.Request) {
 	for _, order := range bids {
 	}
 } */
+
+/*
+Get the amount at which Market Order can be filled for given quantity.
+go to all ASK orders and add up all their prices until the quantity is filled.
+Send this quote to the user and if user agrees then fill the order.
+
+Single dev working hence only quote for BID orders are generated.
+Fund me to add more functionality. jk jk just fo!
+*/
+func (s *Server) quote(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusBadRequest)
+		return
+	}
+
+	type QuoteQuantity struct {
+		Quantity float64
+	}
+	var quoteQuantity QuoteQuantity
+	json.Unmarshal(body, &quoteQuantity)
+
+	var quotePrice float64
+
+	if len(asks) == 0 {
+		http.Error(w, "No sellers available!! GG", http.StatusNotFound)
+		return
+	}
+
+	for _, order := range asks {
+		if quoteQuantity.Quantity > order.Quantity {
+			quotePrice += order.Price * order.Quantity
+			quoteQuantity.Quantity -= order.Quantity
+		} else {
+			quotePrice += order.Price * quoteQuantity.Quantity
+			break
+		}
+	}
+
+	http.Header.Add(w.Header(), "content-type", "application/json")
+	json.NewEncoder(w).Encode(map[string]float64{"Quote": quotePrice})
+}
