@@ -13,9 +13,8 @@ func NewServer(ListenAddr string) *Server {
 }
 
 func (s *Server) Start() error {
-	http.HandleFunc("/depth", s.depth)
+	// http.HandleFunc("/depth", s.depth)
 	http.HandleFunc("/order", s.order)
-	http.HandleFunc("/:userId/balance", s.balance)
 
 	return http.ListenAndServe(s.listenAddr, nil)
 }
