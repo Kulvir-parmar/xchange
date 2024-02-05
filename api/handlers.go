@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"sort"
@@ -51,7 +50,6 @@ func (s *Server) order(w http.ResponseWriter, r *http.Request) {
 	if remainingQuantity == 0.0 {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]float64{"Filled Quantity": order.Quantity})
-		fmt.Println("Order filled completely")
 		return
 	}
 
@@ -76,16 +74,15 @@ func (s *Server) order(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]float64{"Filled Quantity": order.Quantity - remainingQuantity})
 }
 
-// FIX: fix this api
+func (s *Server) depth(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string][]Order{"BIDS": bids, "ASKS": asks})
+}
 
-/* func (s *Server) depth(w http.ResponseWriter, r *http.Request) {
-	orderBook := make(map[float64][]Order)
-
-	for _, order := range asks {
-	}
-	for _, order := range bids {
-	}
-} */
+func (s *Server) balance(w http.ResponseWriter, r *http.Request) {
+	http.Header.Add(w.Header(), "content-type", "application/json")
+	json.NewEncoder(w).Encode(Users)
+}
 
 /*
 Get the amount at which Market Order can be filled for given quantity.
